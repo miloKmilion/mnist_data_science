@@ -59,3 +59,36 @@ class Runner:
         self.accuracy_metric = Metric()
         self.y_true_batches = []
         self.y_pred_batches = []
+
+
+def run_epoch(test_runner: Runner,
+              train_runner: Runner,
+              experiment: ExperimentTracker,
+              epoch_id: int,
+              epoch_total: int):
+
+    experiment.set_stage(Stage.TRAIN)
+    train_runner.run("Train Batches", experiment)
+
+    # Log training Epoch Metrics
+    experiment.add_epoch_metric("Accuracy", train_runner.avg_accuracy, epoch_id)
+
+    experiment.set_stage(Stage.VAL)
+    test_runner.run("Validation Batches", experiment)
+
+    # Log validation Epoch Metrics
+    experiment.add_epoch_metric("Accuracy", test_runner.avg_accuracy, epoch_id)
+    #experiment.add_epoch_confusion_matrix(y_true=test_runner.y_true_batches,
+                                          #y_pred=test_runner.y_pred_batches,
+                                          #step=epoch_id)
+
+    # Compute Average Epoch Metrics
+    summary = ', '.join([
+        f"[Epoch: {epoch_id + 1}/{epoch_total}]",
+        f"Test Accuracy: {test_runner.avg_accuracy: 0.4f}",
+        f"Train Accuracy: {train_runner.avg_accuracy: 0.4f}",
+    ])
+    print('\n' + summary + '\n')
+
+    test_runner.reset()
+    train_runner.reset()
